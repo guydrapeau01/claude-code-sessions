@@ -1,26 +1,8 @@
 /***** GLOBAL CONFIG *****/
-// Alpha Vantage API Keys - Add multiple keys to multiply your quota!
-// With 3 keys: 75 calls/day (25 per key × 3 keys)
-var ALPHAVANTAGE_API_KEYS = [
-  'X7L7XAQ31K35QFG3',  // Key 1
-  'B9C4GGJZJOUQW7FP',  // Key 2
-  'A3PEMXKLMUJ0UZAV',  // Key 3
-];
-
-// Round-robin key rotation with DEBUG LOGGING
-var _avKeyIndex = 0;
-function getNextAVKey_() {
-  var key = ALPHAVANTAGE_API_KEYS[_avKeyIndex];
-  var keyPreview = key.substring(0, 8) + '...';  // Show first 8 chars
-  Logger.log('🔑 Using AV Key #' + (_avKeyIndex + 1) + ' of ' + ALPHAVANTAGE_API_KEYS.length + ': ' + keyPreview);
-  _avKeyIndex = (_avKeyIndex + 1) % ALPHAVANTAGE_API_KEYS.length;
-  return key;
-}
-
-// FMP backup disabled - not working with free tier
-var USE_FMP_BACKUP = false;
-
-var DEFAULT_GROWTH = 0.05;
+var ALPHAVANTAGE_API_KEY = 'X7L7XAQ31K35QFG3'; // <-- Your Alpha Vantage key
+var FMP_API_KEY = '040fQZIXNugGMLHUmPSKQtWzRQWcEVdc'; // Financial Modeling Prep key
+var USE_FMP_BACKUP = true; // Set to true to enable FMP fallback when AV hits rate limit
+var DEFAULT_GROWTH = 0.05; // 5% default growth for Graham simplified formula
 
 /***** SILENT MODE (for Messenger triggers) *****/
 var SILENT_MODE = false;
@@ -146,7 +128,7 @@ function httpGetAVWithRetryCached_(cacheKey, url, maxRetries){
 // (Optional) Symbol search pre-check — DISABLED to save a call and reduce noise
 function avSymbolExists_(symbol){
   var url = 'https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords='
-            + encodeURIComponent(symbol) + '&apikey=' + getNextAVKey_();
+            + encodeURIComponent(symbol) + '&apikey=' + ALPHAVANTAGE_API_KEY;
   var r = httpGetAVWithRetryCached_('AV_SYM_' + symbol, url, 1);
   if (r.status !== 200 || !r.json || !Array.isArray(r.json.bestMatches)) return false;
   return r.json.bestMatches.some(function(m){
@@ -157,14 +139,14 @@ function avSymbolExists_(symbol){
 // Price: GLOBAL_QUOTE → fallback TIME_SERIES_DAILY (last close)
 function avFetchPrice_(symbol){
   var urlQ = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol='
-             + encodeURIComponent(symbol) + '&apikey=' + getNextAVKey_();
+             + encodeURIComponent(symbol) + '&apikey=' + ALPHAVANTAGE_API_KEY;
   var r1 = httpGetAVWithRetryCached_('AV_PQ_' + symbol, urlQ, 1);
   if (r1.status === 200 && r1.json && r1.json['Global Quote']){
     var p = toNum_(r1.json['Global Quote']['05. price']);
     if (isPos_(p)) return p;
   }
   var urlD = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol='
-             + encodeURIComponent(symbol) + '&apikey=' + getNextAVKey_();
+             + encodeURIComponent(symbol) + '&apikey=' + ALPHAVANTAGE_API_KEY;
   var r2 = httpGetAVWithRetryCached_('AV_PD_' + symbol, urlD, 1);
   if (r2.status === 200 && r2.json && r2.json['Time Series (Daily)']){
     var ts = r2.json['Time Series (Daily)'];
@@ -181,7 +163,7 @@ function avFetchPrice_(symbol){
 // Overview: SharesOutstanding / MarketCap / EPS / PEs
 function avFetchOverview_(symbol){
   var url = 'https://www.alphavantage.co/query?function=OVERVIEW&symbol='
-            + encodeURIComponent(symbol) + '&apikey=' + getNextAVKey_();
+            + encodeURIComponent(symbol) + '&apikey=' + ALPHAVANTAGE_API_KEY;
   var r = httpGetAVWithRetryCached_('AV_OV_' + symbol, url, 1);
   if (r.status !== 200 || !r.json) return null;
   var so = toNum_(r.json['SharesOutstanding']);
@@ -206,7 +188,7 @@ function avFetchOverview_(symbol){
 // Current FCF: annual (OCF - |CapEx|) preferred → TTM fallback → OCF proxy last resort
 function avFetchFCF_(symbol){
   var url = 'https://www.alphavantage.co/query?function=CASH_FLOW&symbol='
-            + encodeURIComponent(symbol) + '&apikey=' + getNextAVKey_();
+            + encodeURIComponent(symbol) + '&apikey=' + ALPHAVANTAGE_API_KEY;
   var r = httpGetAVWithRetryCached_('AV_CF_' + symbol, url, 1);
   if (r.status !== 200 || !r.json) return null;
   var annual = r.json.annualReports;
@@ -257,7 +239,7 @@ function avFetchFCF_(symbol){
  */
 function avFetchGrowthFromFCF_(symbol){
   var url = 'https://www.alphavantage.co/query?function=CASH_FLOW&symbol='
-            + encodeURIComponent(symbol) + '&apikey=' + getNextAVKey_();
+            + encodeURIComponent(symbol) + '&apikey=' + ALPHAVANTAGE_API_KEY;
   var r = httpGetAVWithRetryCached_('AV_CF_' + symbol, url, 1);
   if (r.status !== 200 || !r.json) return null;
 
@@ -729,9 +711,6 @@ function calculateIntrinsicValueAlphaVantage(targetSheet){
     // Status & timestamp
     sheet.getRange(STATUS_CELL).setValue('Status: ' + status.join('\n'));
     sheet.getRange(TS_CELL).setValue('Timestamp: ' + new Date().toISOString());
-    
-    // CRITICAL: Force immediate write to sheet (fixes Messenger not seeing updates)
-    SpreadsheetApp.flush();
   } catch (err) {
     safeAlert_(err.message);
     Logger.log('Error: ' + err.message);
@@ -1175,9 +1154,9 @@ function RecordTradeAction_NVDA_Trim10(){
 function PingAlphaVantageQuick(){
   var symbol = 'NVDA';
   var url1 = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol='
-             + encodeURIComponent(symbol) + '&apikey=' + getNextAVKey_();
+             + encodeURIComponent(symbol) + '&apikey=' + ALPHAVANTAGE_API_KEY;
   var url2 = 'https://www.alphavantage.co/query?function=CASH_FLOW&symbol='
-             + encodeURIComponent(symbol) + '&apikey=' + getNextAVKey_();
+             + encodeURIComponent(symbol) + '&apikey=' + ALPHAVANTAGE_API_KEY;
 
   var r1 = httpGetAV_(url1);
   var r2 = httpGetAV_(url2);
@@ -1212,7 +1191,6 @@ var MESSENGER_CONFIG = {
   enabled: true,
   pageAccessToken: 'EAANqc3eZBXwABQlZCAzAHlkGBhHZCQuZBYKP2PasnYvzhFgSI8HO4A2sirQqhBYDK11VxPQr5lvqxqMQmlDzzMwgYbWVkeIm6t8cnrB7Wp2jqgIpTWkZAWeXHpPYOan7hea8nk21oTC9ZA64C97AZAkZAvN0UK08CiW1bfVLw6XQRKP72wNx1vKCG7qf8PDn13fgXzydAdlqjQZDZD', // PASTE YOUR PAGE ACCESS TOKEN HERE
   yourFacebookId: '33834830566132027',     // PASTE YOUR FACEBOOK USER ID HERE
-  pageId: '984542341413465',               // YOUR PAGE ID - CRITICAL TO PREVENT LOOPS!
   checkIntervalMinutes: 1,                 // How often to check for messages (1-30)
   sendTypingIndicator: true                // Show "typing..." while processing
 };
@@ -1517,7 +1495,7 @@ function executeDCFCommand_(params) {
     var criteria = 0;
     var peVal = pe || (price && eps && eps > 0 ? price / eps : null);
     if (peVal) {
-      var pePass = peVal > 0 && peVal < 15;  // Must be positive AND under 15
+      var pePass = peVal < 15;
       message += (pePass ? '✅' : '❌') + ' P/E: ' + peVal.toFixed(1) + ' (max 15)\n';
       if (pePass) criteria++;
     } else {
@@ -1526,14 +1504,14 @@ function executeDCFCommand_(params) {
     
     var pbVal = (price && bvps && bvps > 0) ? price / bvps : null;
     if (pbVal) {
-      var pbPass = pbVal > 0 && pbVal < 1.5;  // Must be positive AND under 1.5
+      var pbPass = pbVal < 1.5;
       message += (pbPass ? '✅' : '❌') + ' P/B: ' + pbVal.toFixed(2) + ' (max 1.5)\n';
       if (pbPass) criteria++;
     } else {
       message += '❓ P/B: N/A\n';
     }
     
-    if (peVal && pbVal && peVal > 0 && pbVal > 0) {  // Only if both positive
+    if (peVal && pbVal) {
       var combined = peVal * pbVal;
       var combPass = combined < 22.5;
       message += (combPass ? '✅' : '❌') + ' PE×PB: ' + combined.toFixed(1) + ' (max 22.5)\n';
@@ -1954,16 +1932,10 @@ function CheckMessengerMessages() {
       var detailResponse = UrlFetchApp.fetch(detailUrl, { muteHttpExceptions: true });
       var detail = JSON.parse(detailResponse.getContentText());
       
-      // Get sender ID
+      // Only process messages from you (not from the page itself)
       var senderId = detail.from ? detail.from.id : null;
       if (!senderId) {
         Logger.log('Skipping message with no sender ID');
-        continue;
-      }
-      
-      // CRITICAL: Skip messages FROM the page itself (only process messages TO the page)
-      if (senderId === MESSENGER_CONFIG.pageId) {
-        Logger.log('Skipping message from page itself: ' + senderId);
         continue;
       }
       
@@ -1987,6 +1959,7 @@ function CheckMessengerMessages() {
         result = { message: parsed.error };
       } else {
         result = executeCommand_(parsed, senderId);  // Pass userId for access control
+      }
       }
       
       // Stop typing indicator

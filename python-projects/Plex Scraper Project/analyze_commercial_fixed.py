@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 """Analyze Centris Commercial properties"""
 import pandas as pd
-import sys, os
+import glob, os
 from run_analysis import analyze_property, generate_report
 
-csv_file = 'centris_commercial_20260217_180409.csv'
+# Find most recent CSV file
+csv_files = glob.glob('centris_commercial_*.csv')
+if not csv_files:
+    print("\n✗ No centris_commercial_*.csv file found!")
+    print("Run the scraper first: python centris_simple_scraper.py")
+    exit(1)
 
-print(f"\nLoading: {csv_file}")
+csv_file = max(csv_files, key=os.path.getctime)
+print(f"\n✓ Using most recent file: {csv_file}")
+
 df = pd.read_csv(csv_file, encoding='utf-8-sig')
 print(f"✓ Loaded {len(df)} properties")
 
@@ -31,21 +38,48 @@ for i, row in df.iterrows():
 
 print(f"✓ {len(properties)} properties ready to analyze\n")
 
+print("="*70)
+print("ANALYZING PROPERTIES")
+print("="*70 + "\n")
+
 analyses = []
 for prop in properties:
     result = analyze_property(prop)
     if result:
         analyses.append(result)
         r = result['best_value_ratio']
-        icon = 'GOOD' if r >= 1.0 else 'SKIP'
-        print(f"[{icon}] {prop['address'][-60:]}")
-        print(f"  Ratio: {r:.1%} | CF: ${result['best_monthly_cf']:,.0f}/mo | ROI: {result['best_cash_roi']:.1%}")
+        icon = '[GOOD]' if r >= 1.0 else '[SKIP]'
+        print(f"{icon} {prop['address'][-60:]}")
+        print(f"       Ratio: {r:.1%} | CF: ${result['best_monthly_cf']:,.0f}/mo | ROI: {result['best_cash_roi']:.1%}")
 
 if analyses:
+    print("\n" + "="*70)
+    print("GENERATING EXCEL REPORT")
+    print("="*70)
+    
     report = generate_report(analyses)
+    
+    good = [a for a in analyses if a['best_value_ratio'] >= 1.15]
+    ok = [a for a in analyses if 1.0 <= a['best_value_ratio'] < 1.15]
+    bad = [a for a in analyses if a['best_value_ratio'] < 1.0]
+    
+    print("\n" + "="*70)
+    print("RESULTS")
+    print("="*70)
+    print(f"\n  Excellent (>115%): {len(good)}")
+    print(f"  Good (100-115%):   {len(ok)}")
+    print(f"  Overpriced (<100%): {len(bad)}")
+    
     best = max(analyses, key=lambda x: x['best_value_ratio'])
-    print(f"\n🏆 BEST: {best['address'][-60:]}")
-    print(f"   Ratio: {best['best_value_ratio']:.1%} | Price: ${best['price']:,.0f}")
-    print(f"\n✓ Report: {report}")
+    print(f"\n  🏆 BEST DEAL:")
+    print(f"  {best['address'][-70:]}")
+    print(f"  Price:          ${best['price']:,.0f}")
+    print(f"  Economic Value: ${best['best_econ_value']:,.0f}")
+    print(f"  Value Ratio:    {best['best_value_ratio']:.1%}")
+    print(f"  Monthly CF:     ${best['best_monthly_cf']:,.0f}")
+    print(f"  Cash ROI:       {best['best_cash_roi']:.1%}")
+    
+    print(f"\n  📊 Excel report: {report}")
+    print()
 else:
-    print("\n⚠ No valid analyses")
+    print("\n⚠ No valid analyses (all negative NOI)")

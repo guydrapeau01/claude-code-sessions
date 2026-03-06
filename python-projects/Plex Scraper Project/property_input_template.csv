@@ -1,0 +1,6 @@
+Address,Market_Price,Num_Units,Gross_Annual_Income,Municipal_Tax_Year,School_Tax_Year,Utilities_Month,Property_Mgmt_Pct,Maintenance_Pct,Insurance_Pct,Other_Pct,Listing_URL,Notes
+"123 Rue Example, Montreal",950000,6,72000,18000,3600,500,0.05,0.03,0.01,0.02,https://centris.ca/example1,Great location near metro
+"456 Avenue Test, Laval",1100000,6,78480,22000,4400,600,0.05,0.03,0.01,0.02,https://duproprio.com/example2,Higher taxes
+"789 Boulevard Demo, Longueuil",825000,5,58000,15000,3000,400,0.05,0.03,0.01,0.02,https://centris.ca/example3,Needs some renovations
+"
+2166A - 2170, Rue Rachel Est, Montréal (Le Plateau-Mont-Royal)",1189000,6,74616,6730,835,0,0.05,0.03,0.01,0.02,https://www.centris.ca/fr/multifamilial~a-vendre~montreal-le-plateau-mont-royal/28967635,

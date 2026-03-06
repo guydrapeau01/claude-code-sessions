@@ -1,0 +1,4 @@
+=== Fri 03/06/2026  8:09:19.93 === 
+Script dir: C:\Users\GuyDrapeauTHORASYS\OneDrive - Thorasys\Documents\CLAUDE\python-projects\Plex Scraper Project\ 
+Python 3.14.3
+Launching... 

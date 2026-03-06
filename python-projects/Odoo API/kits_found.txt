@@ -1,0 +1,36 @@
+# ================================================================
+# KITS — copy/paste into odoo_config.py, fill in monthly qty
+# Found 15 unique kits containing your devices
+# ================================================================
+KIT_PRODUCTS = {
+    '101485': 0,   # [normal]  devices: 101490
+               # tremoflo C-100 Airwave Oscillometry System & Accessories - Suregard Australia Edition
+    '101524': 0,   # [normal]  devices: 101336
+               # tremoflo C-100 Airwave Oscillometry System & Accessories - US Edition
+    '101761': 0,   # [normal]  devices: 101759
+               # tf C-100 Kit Vitalograph - Clinical Trial Edition (28300)
+    '101762': 0,   # [normal]  devices: 101760
+               # tf C-100 Kit Vitalograph - Healthcare Edition (28500)
+    '101770': 0,   # [normal]  devices: 101769
+               # tremoflo C2 Airwave Oscillometry System & Accessories- AU Edition
+    '101929': 0,   # [normal]  devices: 101711
+               # tremoflo C2 Airwave Oscillometry System & Accessories - USA Edition
+    '101963': 0,   # [normal]  devices: 101336
+               # tremoflo C-100 Airwave Oscillometry System & Accessories - India
+    '101969': 0,   # [normal]  devices: 101336
+               # tremoflo C-100 Airwave Oscillometry System & Accessories - Canada
+    '102002': 0,   # [normal]  devices: 101336
+               # tremoflo C-100 Airwave Oscillometry System & Accessories - UK Edition
+    '102003': 0,   # [normal]  devices: 101336
+               # tremoflo C-100 Airwave Oscillometry System & Accessories - Europe Edition
+    '102005': 0,   # [normal]  devices: 101336
+               # tremoflo C-100 Airwave Oscillometry System & Accessories - Switzerland Edition
+    '102035': 0,   # [normal]  devices: 101711
+               # tremoflo C2 Airwave Oscillometry System & Accessories - Canada Edition
+    '102036': 0,   # [normal]  devices: 101711
+               # tremoflo C2 Airwave Oscillometry System & Accessories
+    '102181': 0,   # [normal]  devices: 101760
+               # tf C-100 Kit Vitalograph - Healthcare US Edition (28500)
+    '102585': 0,   # [normal]  devices: 101336
+               # tremoflo C-100 Airwave Oscillometry System & Accessories - ERT US Edition
+}
